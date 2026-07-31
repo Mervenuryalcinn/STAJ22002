@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../../app/router/route_paths.dart';
-import 'package:go_router/go_router.dart';
 
 class LoginView extends StatelessWidget {
   const LoginView({super.key});
@@ -25,8 +24,7 @@ class LoginView extends StatelessWidget {
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () {
-                // Giriş başarılı simülasyonu ile ana sayfaya yönlendir
-                context.go(RoutePaths.home);
+                Navigator.pushReplacementNamed(context, RoutePaths.home);
               },
               child: const Text('Giriş Yap'),
             ),

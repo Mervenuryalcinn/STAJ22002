@@ -1,22 +1,28 @@
-import 'package:dio/dio.dart';
-import 'app_interceptor.dart';
+import 'package:dio/dio.dart'; // <--- Bu import kesinlikle olmalı!
 
 class DioClient {
-  late final Dio _dio;
-
-  DioClient() {
-    _dio = Dio(
-      BaseOptions(
-        baseUrl: 'https://api.ornekeczane.com/v1/', // Mock veya gerçek base url
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 15),
-        headers: {'Content-Type': 'application/json'},
-      ),
-    );
-
-    // Interceptor ekleme
-    _dio.interceptors.add(AppInterceptor());
-  }
+  final Dio _dio = Dio(
+    BaseOptions(
+      baseUrl: 'http://10.0.2.2:8000', // Ürünler için lokal FastAPI adresi
+      connectTimeout: const Duration(seconds: 5),
+      receiveTimeout: const Duration(seconds: 5),
+      headers: {
+        'content-type': 'application/json',
+      },
+    ),
+  );
 
   Dio get dio => _dio;
+
+  Future<Response> get(
+      String path, {
+        Map<String, dynamic>? queryParameters,
+      }) async {
+    try {
+      final response = await _dio.get(path, queryParameters: queryParameters);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

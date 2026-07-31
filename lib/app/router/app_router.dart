@@ -24,7 +24,7 @@ class AppRouter {
       return null;
     },
     routes: [
-      GoRoute(gi
+      GoRoute(
         path: RoutePaths.splash,
         name: RouteNames.splash,
         builder: (context, state) => const Scaffold(
