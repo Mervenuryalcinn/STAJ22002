@@ -25,4 +25,18 @@ class DioClient {
       rethrow;
     }
   }
+
+  // BURAYA POST METODUNU EKLİYORUZ:
+  Future<Response> post(
+      String path, {
+        dynamic data,
+        Map<String, dynamic>? queryParameters,
+      }) async {
+    try {
+      final response = await _dio.post(path, data: data, queryParameters: queryParameters);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

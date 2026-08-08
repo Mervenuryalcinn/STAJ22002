@@ -1,6 +1,8 @@
 import '../../domain/entities/pharmacy_entity.dart';
 
 class PharmacyModel extends PharmacyEntity {
+  final int? stock;
+
   const PharmacyModel({
     required super.id,
     required super.name,
@@ -9,17 +11,25 @@ class PharmacyModel extends PharmacyEntity {
     required super.latitude,
     required super.longitude,
     required super.isOpenOnDuty,
+    this.stock,
   });
 
   factory PharmacyModel.fromJson(Map<String, dynamic> json) {
     return PharmacyModel(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      address: json['address'] ?? '',
-      phone: json['phone'] ?? '',
-      latitude: (json['latitude'] ?? 0.0).toDouble(),
-      longitude: (json['longitude'] ?? 0.0).toDouble(),
-      isOpenOnDuty: json['isOpenOnDuty'] ?? false,
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      address: json['address']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
+      latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
+      longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
+      isOpenOnDuty:
+      json['isOpenOnDuty'] == true ||
+          json['isOpenOnDuty'] == 1 ||
+          json['is_duty'] == true ||
+          json['is_duty'] == 1,
+      stock: json['stock'] != null
+          ? int.tryParse(json['stock'].toString())
+          : null,
     );
   }
 
@@ -32,6 +42,7 @@ class PharmacyModel extends PharmacyEntity {
       'latitude': latitude,
       'longitude': longitude,
       'isOpenOnDuty': isOpenOnDuty,
+      'stock': stock,
     };
   }
 }

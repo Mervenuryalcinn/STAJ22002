@@ -7,7 +7,7 @@ class PharmacyEntity extends Equatable {
   final String phone;
   final double latitude;
   final double longitude;
-  final bool isOpenOnDuty; // Nöbetçi mi?
+  final bool isOpenOnDuty;
 
   const PharmacyEntity({
     required this.id,

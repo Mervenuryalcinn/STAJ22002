@@ -25,20 +25,15 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
 
   Future<void> _onSearchProducts(
       SearchProductsEvent event, Emitter<ProductState> emit) async {
-    final currentState = state;
-    if (currentState is ProductLoaded) {
-      // Eğer halihazırda ürünler yüklendiyse yerel filtreleme yapalım
-      final allProducts = currentState.products;
-      if (event.query.isEmpty) {
-        emit(ProductLoaded(products: allProducts));
-        return;
-      }
+    // Arama yapıldığında yükleniyor gösterip doğrudan MySQL'den/API'den filtreli veri çekiyoruz
+    emit(ProductLoading());
 
-      final filteredList = allProducts.where((product) {
-        return product.name.toLowerCase().contains(event.query.toLowerCase());
-      }).toList();
+    // UseCase'e arama parametresini gönderiyoruz (FastAPI & MySQL LIKE sorgusu için)
+    final failureOrProducts = await getProductsUseCase(query: event.query);
 
-      emit(ProductLoaded(products: filteredList));
-    }
+    failureOrProducts.fold(
+          (failure) => emit(ProductError(message: failure.message)),
+          (products) => emit(ProductLoaded(products: products)),
+    );
   }
 }

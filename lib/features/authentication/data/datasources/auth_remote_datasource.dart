@@ -1,31 +1,60 @@
 import 'package:dio/dio.dart';
 import '../../../../core/error/exceptions.dart';
+import '../../../../core/network/dio_client.dart';
 import '../models/user_model.dart';
 
 abstract class AuthRemoteDatasource {
-  Future<UserModel> login(String email, String password);
+  Future<UserModel> login(
+      String email,
+      String password,
+      );
 }
 
 class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
-  final Dio dio; // Veya DioClient
+  final DioClient dioClient;
 
-  AuthRemoteDatasourceImpl({required this.dio});
+  AuthRemoteDatasourceImpl({
+    required this.dioClient,
+  });
 
   @override
-  Future<UserModel> login(String email, String password) async {
+  Future<UserModel> login(
+      String email,
+      String password,
+      ) async {
     try {
-      final response = await dio.post('/auth/login', data: {
-        'email': email,
-        'password': password,
-      });
+      final response = await dioClient.dio.post(
+        "/auth/login",
+        data: {
+          "email": email,
+          "password": password,
+        },
+      );
 
-      if (response.statusCode == 200) {
-        return UserModel.fromJson(response.data['result']);
-      } else {
-        throw const ServerException('Giriş yapılamadı.');
+      if (response.data["success"] == true) {
+        print("========================================");
+        print("🔐 LOGIN RESPONSE");
+        print(response.data["result"]);
+        print("========================================");
+
+        return UserModel.fromJson(
+          response.data["result"],
+        );
       }
+
+      throw ServerException(
+        response.data["message"] ?? "Giriş başarısız.",
+      );
     } on DioException catch (e) {
-      throw ServerException(e.message ?? 'Ağ hatası');
+      if (e.response != null) {
+        throw ServerException(
+          e.response?.data["detail"] ?? "Giriş başarısız.",
+        );
+      }
+
+      throw ServerException(
+        "Sunucuya bağlanılamadı.",
+      );
     }
   }
 }

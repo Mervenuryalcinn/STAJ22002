@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../bloc/product_bloc.dart';
 import '../bloc/product_event.dart';
 import '../bloc/product_state.dart';
 import '../views/product_detail_view.dart';
-import '../../../cart/presentation/views/cart_view.dart'; // Sepet görünümü importu
-import '../../../pharmacy/presentation/views/pharmacy_list_view.dart';
+import '../../../../app/router/route_paths.dart';
 
 class ProductListView extends StatelessWidget {
   const ProductListView({super.key});
@@ -16,28 +16,32 @@ class ProductListView extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Eczane Ürünleri'),
         actions: [
-          // 1. Eczaneler ve Konum Ekranına Giden Buton
+          // Favoriler Sayfasına Giden Buton
+          IconButton(
+            icon: const Icon(Icons.favorite, color: Colors.red),
+            onPressed: () {
+              context.push('/favorites');
+            },
+          ),
+          // Kullanıcı Profil Sayfasına Giden Buton
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              context.push('/profile');
+            },
+          ),
+          // Eczaneler ve Konum Ekranına Giden Buton (GoRouter)
           IconButton(
             icon: const Icon(Icons.location_on),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const PharmacyListView(),
-                ),
-              );
+              context.push(RoutePaths.pharmacies);
             },
           ),
-          // 2. Sepet İkonu
+          // Sepet İkonu (GoRouter)
           IconButton(
             icon: const Icon(Icons.shopping_cart),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const CartView(),
-                ),
-              );
+              context.push(RoutePaths.cart);
             },
           ),
         ],
@@ -57,14 +61,9 @@ class ProductListView extends StatelessWidget {
                 contentPadding: const EdgeInsets.symmetric(vertical: 0),
               ),
               onChanged: (query) {
-                if (query.trim().isEmpty) {
-                  // Arama kutusu silindiyse tüm ürünleri tekrar getir
-                  BlocProvider.of<ProductBloc>(context).add(FetchProductsEvent());
-                } else {
-                  // Doluysa arama yapmaya devam et
-                  BlocProvider.of<ProductBloc>(context)
-                      .add(SearchProductsEvent(query: query));
-                }
+                // Arama kutusuna ne yazılırsa yazılsın doğrudan Bloc'a gönderiyoruz
+                BlocProvider.of<ProductBloc>(context)
+                    .add(SearchProductsEvent(query: query));
               },
             ),
           ),
@@ -83,7 +82,9 @@ class ProductListView extends StatelessWidget {
                   return ListView.builder(
                     itemCount: state.products.length,
                     itemBuilder: (context, index) {
-                      final product = state.products[index];
+                      final product = state.products.length > index ? state.products[index] : null;
+                      if (product == null) return const SizedBox.shrink();
+
                       return Card(
                         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         child: ListTile(
@@ -92,6 +93,7 @@ class ProductListView extends StatelessWidget {
                           subtitle: Text('${product.price} ₺'),
                           trailing: Text('Stok: ${product.stock}'),
                           onTap: () {
+                            // Çakışmayı önlemek için yalnızca Navigator.push kullanıldı:
                             Navigator.push(
                               context,
                               MaterialPageRoute(
