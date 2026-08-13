@@ -3,7 +3,7 @@ import '../../../../core/error/failures.dart';
 import '../entities/product_entity.dart';
 
 abstract class ProductRepository {
-  // Arama ve sayfalama parametreleri eklendi
+  // Arama ve sayfalama parametreleri
   Future<Either<Failure, List<ProductEntity>>> getProducts({
     int page = 1,
     int limit = 10,

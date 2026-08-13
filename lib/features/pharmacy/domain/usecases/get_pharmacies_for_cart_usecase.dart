@@ -1,5 +1,4 @@
 import 'package:dartz/dartz.dart';
-
 import '../../../../core/error/failures.dart';
 import '../entities/pharmacy_stock_entity.dart';
 import '../repositories/pharmacy_repository.dart';

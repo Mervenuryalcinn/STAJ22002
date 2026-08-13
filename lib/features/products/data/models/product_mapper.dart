@@ -13,3 +13,18 @@ extension ProductMapper on ProductModel {
     );
   }
 }
+extension ProductEntityMapper on ProductEntity {
+  // ProductEntity -> ProductModel dönüşümü
+  ProductModel toModel() {
+    return this is ProductModel
+        ? this as ProductModel
+        : ProductModel(
+      id: id,
+      name: name,
+      price: price,
+      imageUrl: imageUrl,
+      description: description,
+      stock: stock,
+    );
+  }
+}

@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:lideatech_pharmacy_app/core/network/dio_client.dart';
+import 'package:lideatech_pharmacy_app/core/error/exceptions.dart';
+import 'package:dio/dio.dart';
 import '../models/pharmacy_model.dart';
 
 abstract class PharmacyRemoteDatasource {
@@ -28,17 +30,18 @@ class PharmacyRemoteDatasourceImpl implements PharmacyRemoteDatasource {
         final List<dynamic> data = response.data['result'];
         return data.map((json) => PharmacyModel.fromJson(json)).toList();
       } else {
-        throw Exception('Nöbetçi eczaneler yüklenemedi.');
+        throw const ServerException('Nöbetçi eczaneler yüklenemedi.');
       }
+    } on DioException catch (e) {
+      throw ServerException(e.message ?? 'Ağ bağlantı hatası');
     } catch (e) {
-      throw Exception('Ağ bağlantı hatası: ${e.toString()}');
+      throw ServerException(e.toString());
     }
   }
 
   @override
   Future<List<PharmacyModel>> getAllPharmacies(String il, String? ilce) async {
     try {
-      // Tüm eczaneler için de il ve ilçe filtresini /pharmacies/city endpoint'ine gönderiyoruz
       final response = await dioClient.get(
         '/pharmacies/city',
         queryParameters: {
@@ -51,10 +54,12 @@ class PharmacyRemoteDatasourceImpl implements PharmacyRemoteDatasource {
         final List<dynamic> data = response.data['result'];
         return data.map((json) => PharmacyModel.fromJson(json)).toList();
       } else {
-        throw Exception('Tüm eczaneler alınamadı.');
+        throw const ServerException('Tüm eczaneler alınamadı.');
       }
+    } on DioException catch (e) {
+      throw ServerException(e.message ?? 'Ağ bağlantı hatası');
     } catch (e) {
-      throw Exception('Tüm eczaneler yüklenemedi: $e');
+      throw ServerException(e.toString());
     }
   }
 
@@ -74,10 +79,12 @@ class PharmacyRemoteDatasourceImpl implements PharmacyRemoteDatasource {
         final List<dynamic> data = response.data['result'];
         return data.map((json) => PharmacyModel.fromJson(json)).toList();
       } else {
-        throw Exception('Konuma göre eczaneler yüklenemedi.');
+        throw const ServerException('Konuma göre eczaneler yüklenemedi.');
       }
+    } on DioException catch (e) {
+      throw ServerException(e.message ?? 'Ağ bağlantı hatası');
     } catch (e) {
-      throw Exception('Ağ hatası: $e');
+      throw ServerException(e.toString());
     }
   }
 }

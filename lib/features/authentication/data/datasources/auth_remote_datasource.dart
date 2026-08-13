@@ -8,6 +8,12 @@ abstract class AuthRemoteDatasource {
       String email,
       String password,
       );
+  Future<UserModel> register(
+      int tckn,
+      String name,
+      String email,
+      String password,
+      );
 }
 
 class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
@@ -49,6 +55,55 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
       if (e.response != null) {
         throw ServerException(
           e.response?.data["detail"] ?? "Giriş başarısız.",
+        );
+      }
+
+      throw ServerException(
+        "Sunucuya bağlanılamadı.",
+      );
+    }
+  }
+
+  // -- REGISTER Metodu---
+  @override
+  Future<UserModel> register(
+      int tckn,
+      String name,
+      String email,
+      String password,
+      ) async {
+    try {
+      final response = await dioClient.dio.post(
+        "/register",
+        data: {
+          "tckn": tckn,
+          "name": name,
+          "email": email,
+          "password": password,
+        },
+      );
+
+      if (response.data["success"] == true) {
+        print("========================================");
+        print("📝 REGISTER RESPONSE");
+        print(response.data);
+        print("========================================");
+
+        return UserModel(
+          id: tckn.toString(),
+          tckn: tckn.toString(),
+          email: email,
+          name: name,
+        );
+      }
+
+      throw ServerException(
+        response.data["message"] ?? "Kayıt olma başarısız.",
+      );
+    } on DioException catch (e) {
+      if (e.response != null) {
+        throw ServerException(
+          e.response?.data["detail"] ?? "Kayıt olma başarısız.",
         );
       }
 

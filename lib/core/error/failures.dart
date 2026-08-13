@@ -1,6 +1,11 @@
-abstract class Failure {
+import 'package:equatable/equatable.dart';
+
+abstract class Failure extends Equatable {
   final String message;
   const Failure(this.message);
+
+  @override
+  List<Object> get props => [message];
 }
 
 class ServerFailure extends Failure {
@@ -8,6 +13,12 @@ class ServerFailure extends Failure {
 }
 
 class NetworkFailure extends Failure {
-  const NetworkFailure([String message = 'İnternet bağlantınızı kontrol edin.'])
-      : super(message);
+  const NetworkFailure([super.message = 'İnternet bağlantınızı kontrol edin.']);
+}
+
+class CacheFailure extends Failure {
+  const CacheFailure([super.message = 'Önbellek hatası oluştu.']);
+
+  @override
+  List<Object> get props => [];
 }

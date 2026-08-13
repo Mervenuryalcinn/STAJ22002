@@ -10,4 +10,5 @@ class CartItemEntity {
   });
 
   double get totalprice => product.price * quantity;
+
 }

@@ -37,4 +37,18 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, UserEntity>> register(int tckn, String name, String email, String password) async {
+    try {
+      final response = await remoteDatasource.register(tckn, name, email, password);
+      return Right(response);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on DioException catch (e) {
+      return Left(ServerFailure(e.message ?? 'Ağ bağlantı hatası'));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }

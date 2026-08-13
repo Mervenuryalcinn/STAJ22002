@@ -4,9 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../bloc/order_bloc.dart';
 import '../bloc/order_event.dart';
 import '../bloc/order_state.dart';
-
 import '../../../authentication/presentation/bloc/auth_bloc.dart';
 import '../../../authentication/presentation/bloc/auth_state.dart';
+import 'package:lideatech_pharmacy_app/l10n/app_localizations.dart';
 
 class OrdersView extends StatefulWidget {
   const OrdersView({super.key});
@@ -19,14 +19,12 @@ class _OrdersViewState extends State<OrdersView> {
   @override
   void initState() {
     super.initState();
-    // Siparişleri sadece sayfa ilk açıldığında bir kez yüklüyoruz
     _loadOrders();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Sayfa her odaklandığında listeyi otomatik günceller
     _loadOrders();
   }
 
@@ -45,8 +43,26 @@ class _OrdersViewState extends State<OrdersView> {
     }
   }
 
+  // Backend'den Türkçe gelen statüleri dile göre çeviren fonksiyon
+  String _getTranslatedStatus(BuildContext context, String status) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (status.toLowerCase().trim()) {
+      case 'talep alındı':
+        return l10n.step1Title;
+      case 'hazırlanıyor':
+        return l10n.step2Title;
+      case 'yola çıktı':
+        return l10n.step3Title;
+      case 'tamamlandı':
+        return l10n.step4Title;
+      default:
+        return status;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final authState = context.read<AuthBloc>().state;
     String? userId;
 
@@ -55,10 +71,10 @@ class _OrdersViewState extends State<OrdersView> {
     }
 
     if (userId == null || userId.isEmpty) {
-      return const Scaffold(
+      return Scaffold(
         body: Center(
           child: Text(
-            'Kullanıcı bilgisi bulunamadı. Lütfen tekrar giriş yapın.',
+            l10n.userInfoNotFoundLogin,
           ),
         ),
       );
@@ -66,9 +82,8 @@ class _OrdersViewState extends State<OrdersView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Geçmiş Taleplerim'),
+        title: Text(l10n.pastOrders),
         actions: [
-          // Listeyi manuel yenilemek için opsiyonel buton
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadOrders,
@@ -83,9 +98,9 @@ class _OrdersViewState extends State<OrdersView> {
             );
           } else if (state is OrderLoadedState) {
             if (state.orders.isEmpty) {
-              return const Center(
+              return Center(
                 child: Text(
-                  'Henüz verilmiş bir talep bulunmuyor.',
+                  l10n.noOrdersYet,
                 ),
               );
             }
@@ -102,7 +117,7 @@ class _OrdersViewState extends State<OrdersView> {
                   ),
                   child: ListTile(
                     title: Text(
-                      'Sipariş ID: #${order.id}',
+                      '${l10n.orderId}: #${order.id}',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                       ),
@@ -112,11 +127,11 @@ class _OrdersViewState extends State<OrdersView> {
                       children: [
                         const SizedBox(height: 4),
                         Text(
-                          'Adres: ${order.address}',
+                          '${l10n.address}: ${order.address}',
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Tutar: ${order.totalAmount.toStringAsFixed(2)} ₺',
+                          '${l10n.amount}: ${order.totalAmount.toStringAsFixed(2)} ₺',
                           style: const TextStyle(
                             color: Colors.green,
                           ),
@@ -125,7 +140,7 @@ class _OrdersViewState extends State<OrdersView> {
                     ),
                     trailing: Chip(
                       label: Text(
-                        order.status,
+                        _getTranslatedStatus(context, order.status),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -144,7 +159,7 @@ class _OrdersViewState extends State<OrdersView> {
           } else if (state is OrderErrorState) {
             return Center(
               child: Text(
-                'Hata: ${state.message}',
+                '${l10n.error}: ${state.message}',
               ),
             );
           }
@@ -156,7 +171,7 @@ class _OrdersViewState extends State<OrdersView> {
   }
 
   Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
+    switch (status.toLowerCase().trim()) {
       case 'talep alındı':
         return Colors.orange;
       case 'hazırlanıyor':

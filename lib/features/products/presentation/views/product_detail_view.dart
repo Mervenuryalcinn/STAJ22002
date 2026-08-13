@@ -11,26 +11,31 @@ import '../../../favorites/presentation/bloc/favorite_bloc.dart';
 import '../../../favorites/presentation/bloc/favorite_event.dart';
 import '../../../favorites/presentation/bloc/favorite_state.dart';
 import '../../../../app/router/route_paths.dart';
+import '../../../../../../core/widgets/top_notification.dart';
+import 'package:lideatech_pharmacy_app/l10n/app_localizations.dart';
 
 class ProductDetailView extends StatelessWidget {
-  final ProductEntity product;
-
   const ProductDetailView({super.key, required this.product});
+
+  final ProductEntity product;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(product.name),
         actions: [
-          // Sağ üst köşeye Durum Kontrollü Favori Butonu Eklendi
+          // Sağ üst köşeye Oturum Kontrollü Favori Butonu
           BlocBuilder<FavoriteBloc, FavoriteState>(
             builder: (context, state) {
               bool isFavorite = false;
 
-              // Eğer favoriler yüklendiyse, bu ürün favoriler listesinde var mı kontrol et
               if (state is FavoritesLoadedState) {
-                isFavorite = state.favorites.any((fav) => fav.id == product.id.toString());
+                isFavorite = state.favorites.any(
+                      (fav) => fav.id.toString().trim() == product.id.toString().trim(),
+                );
               }
 
               return IconButton(
@@ -39,25 +44,38 @@ class ProductDetailView extends StatelessWidget {
                   color: Colors.red,
                 ),
                 onPressed: () {
+                  // Oturum kontrolü
+                  final authState = context.read<AuthBloc>().state;
+                  final bool isLoggedIn = authState is AuthSuccessState;
+
+                  if (!isLoggedIn) {
+                    // context.go yerine context.push kullanarak geri dönülebilmesini sağlıyoruz
+                    context.push(RoutePaths.login);
+                    TopNotification.show(
+                      context,
+                      'Favorilere eklemek için giriş yapmalısınız', // l10n'de tanımlı değilse doğrudan metin
+                      isError: true,
+                    );
+                    return;
+                  }
+
                   final favoriteItem = FavoriteEntity(
                     id: product.id.toString(),
                     title: product.name,
                     type: 'product',
                   );
 
+                  // 1. Bloğa eventi gönderiyoruz
                   context.read<FavoriteBloc>().add(
                     ToggleFavoriteEvent(favorite: favoriteItem),
                   );
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        isFavorite
-                            ? '${product.name} favorilerden çıkarıldı!'
-                            : '${product.name} favorilere eklendi!',
-                      ),
-                      duration: const Duration(seconds: 1),
-                    ),
+                  // 2. Bildirimi gösteriyoruz
+                  TopNotification.show(
+                    context,
+                    isFavorite
+                        ? '${product.name} ${l10n.removedFromFavorites}'
+                        : '${product.name} ${l10n.addedToFavorites}',
                   );
                 },
               );
@@ -92,9 +110,9 @@ class ProductDetailView extends StatelessWidget {
               style: const TextStyle(fontSize: 20, color: Colors.green, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Ürün Açıklaması',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Text(
+              l10n.productDescription,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
@@ -111,7 +129,7 @@ class ProductDetailView extends StatelessWidget {
                   context.push('/product-pharmacies/${product.id}', extra: product.name);
                 },
                 icon: const Icon(Icons.local_pharmacy, color: Colors.blue),
-                label: Text('${product.name} Hangi Eczanelerde Var?'),
+                label: Text('${product.name} ${l10n.pharmacyQueryButton}'),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   side: const BorderSide(color: Colors.blue),
@@ -129,23 +147,26 @@ class ProductDetailView extends StatelessWidget {
                   final bool isLoggedin = authState is AuthSuccessState;
 
                   if (!isLoggedin) {
-                    context.go(RoutePaths.login);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Sepete ürün eklemek için lütfen önce giriş yapın!'),
-                      ),
+                    // Sepette de aynı mantık istenirse burası da context.push yapılabilir
+                    context.push(RoutePaths.login);
+                    TopNotification.show(
+                      context,
+                      l10n.loginRequiredForCart,
+                      isError: true,
                     );
                   } else {
                     context.read<CartBloc>().add(
                       AddToCartEvent(product: product),
                     );
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${product.name} sepete eklendi!')),
+
+                    TopNotification.show(
+                      context,
+                      '${product.name} ${l10n.addedToCart}',
                     );
                   }
                 },
                 icon: const Icon(Icons.shopping_cart),
-                label: const Text('Sepete Ekle'),
+                label: Text(l10n.addToCart),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),

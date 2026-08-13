@@ -8,7 +8,7 @@ class GetProductsUseCase {
 
   GetProductsUseCase(this.repository);
 
-  // page, limit ve query parametrelerini opsiyonel olarak ekledik
+  // page, limit ve query parametrelerini opsiyonel
   Future<Either<Failure, List<ProductEntity>>> call({
     int page = 1,
     int limit = 10,

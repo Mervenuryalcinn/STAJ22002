@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:lideatech_pharmacy_app/core/network/dio_client.dart';
 import 'package:lideatech_pharmacy_app/core/error/exceptions.dart';
-import '../../domain/entities/product_entity.dart'; // 1. Entity import edildi
+import '../../domain/entities/product_entity.dart';
 import '../models/product_model.dart';
-import '../models/product_mapper.dart'; // 2. Mapper import edildi
+import '../models/product_mapper.dart';
 
 abstract class ProductRemoteDatasource {
   // Artık dışarıya Model değil Entity listesi veriyoruz

@@ -1,14 +1,12 @@
-// order_event.dart içerisindeki LoadOrdersEvent sınıfı şu şekilde olmalıdır:
-
 abstract class OrderEvent {}
 
 class LoadOrdersEvent extends OrderEvent {
   final String userId;
 
   LoadOrdersEvent({required this.userId});
-}// FetchOrdersEvent yerine
+}
 
-class LoadOrderDetailEvent extends OrderEvent { // FetchOrderDetailEvent yerine
+class LoadOrderDetailEvent extends OrderEvent {
   final String orderId;
 
   LoadOrderDetailEvent({required this.orderId});

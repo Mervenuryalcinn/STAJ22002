@@ -4,21 +4,39 @@ import 'package:go_router/go_router.dart';
 import '../bloc/order_bloc.dart';
 import '../bloc/order_event.dart';
 import '../bloc/order_state.dart';
+import 'package:lideatech_pharmacy_app/l10n/app_localizations.dart';
 
-class OrderDetailView extends StatelessWidget {
+class OrderDetailView extends StatefulWidget {
   final String orderId;
 
   const OrderDetailView({super.key, required this.orderId});
 
   @override
+  State<OrderDetailView> createState() => _OrderDetailViewState();
+}
+
+class _OrderDetailViewState extends State<OrderDetailView> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchOrderDetail();
+    });
+  }
+
+  void _fetchOrderDetail() {
+    if (mounted) {
+      context.read<OrderBloc>().add(LoadOrderDetailEvent(orderId: widget.orderId));
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Belirli bir siparişin detayını yükle
-    context.read<OrderBloc>().add(LoadOrderDetailEvent(orderId: orderId));
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Sipariş Takibi #$orderId'),
-        // Sol üst köşeye şık ve garantili geri dönüş butonu eklendi:
+        title: Text('${l10n.orderTracking} #${widget.orderId}'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -29,57 +47,112 @@ class OrderDetailView extends StatelessWidget {
             }
           },
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Yenile',
+            onPressed: _fetchOrderDetail,
+          ),
+        ],
       ),
       body: BlocBuilder<OrderBloc, OrderState>(
         builder: (context, state) {
-          if (state is OrderLoadingState) {
+          if (state is OrderLoadingState ||
+              state is OrderLoadedState ||
+              state.runtimeType.toString() == 'OrderInitial' ||
+              state is OrderInitialState) {
+
+            if (state is OrderLoadedState) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _fetchOrderDetail();
+              });
+            }
+
             return const Center(child: CircularProgressIndicator());
-          } else if (state is OrderDetailLoadedState) {
+          }
+
+          if (state is OrderDetailLoadedState) {
             final order = state.order;
-            return Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            return RefreshIndicator(
+              onRefresh: () async => _fetchOrderDetail(),
+              child: ListView(
+                padding: const EdgeInsets.all(16.0),
                 children: [
-                  Text('Teslimat Adresi:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade700)),
+                  Text(l10n.deliveryAddress, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade700)),
+                  const SizedBox(height: 4),
                   Text(order.address, style: const TextStyle(fontSize: 16)),
                   const SizedBox(height: 16),
-                  Text('Toplam Tutar: ${order.totalAmount.toStringAsFixed(2)} ₺', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text('${l10n.totalAmount}: ${order.totalAmount.toStringAsFixed(2)} ₺', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 24),
-                  const Text(
-                    'Talep Edilen Ürünler',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  Text(
+                    l10n.requestedProducts,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   ...order.items.map((item) => Card(
                     margin: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
-                      leading: const Icon(Icons.medication, color: Colors.green),
+                      leading: const Icon(Icons.medical_services, color: Colors.green),
                       title: Text(item.productName),
-                      trailing: Text('${item.quantity} Adet', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      trailing: Text('${item.quantity} ${l10n.units}', style: const TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   )),
-                  const Text('Sipariş Durumu Adımları', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),
-
-                  // Görsel Adım Takip Bileşeni (Stepleneer Mantığı)
-                  Expanded(
+                  Text(l10n.orderStatusSteps, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 300,
                     child: ListView(
+                      physics: const NeverScrollableScrollPhysics(),
                       children: [
-                        _buildStepItem('Talep Alındı', 'Eczaneniz talebinizi incelemeye aldı.', true),
-                        _buildStepItem('Hazırlanıyor', 'İlaçlarınız eczacı tarafından hazırlanıyor.', _isStepActive(order.status, 'Hazırlanıyor')),
-                        _buildStepItem('Yola Çıktı / Hazır', 'Kurye yola çıktı veya eczaneden teslim alabilirsiniz.', _isStepActive(order.status, 'Yola Çıktı')),
-                        _buildStepItem('Tamamlandı', 'Sipariş başarıyla sonuçlandı.', _isStepActive(order.status, 'Tamamlandı')),
+                        _buildStepItem(l10n.step1Title, l10n.step1Desc, true),
+                        _buildStepItem(l10n.step2Title, l10n.step2Desc, _isStepActive(order.status, 'Hazırlanıyor')),
+                        _buildStepItem(l10n.step3Title, l10n.step3Desc, _isStepActive(order.status, 'Yola Çıktı')),
+                        _buildStepItem(l10n.step4Title, l10n.step4Desc, _isStepActive(order.status, 'Tamamlandı')),
                       ],
                     ),
                   ),
                 ],
               ),
             );
-          } else if (state is OrderErrorState) {
-            return Center(child: Text('Hata: ${state.message}'));
           }
-          return const Center(child: Text('Bilgiler yükleniyor...'));
+
+          if (state is OrderErrorState) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                    const SizedBox(height: 12),
+                    Text('${l10n.error}: ${state.message}', textAlign: TextAlign.center),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: _fetchOrderDetail,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Tekrar Dene'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: _fetchOrderDetail,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Detayları Yükle'),
+                ),
+              ],
+            ),
+          );
         },
       ),
     );

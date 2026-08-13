@@ -1,7 +1,7 @@
 class FavoriteEntity {
   final String id;
   final String title;
-  final String type; // Örn: 'product' veya 'pharmacy'
+  final String type;
 
   const FavoriteEntity({
     required this.id,

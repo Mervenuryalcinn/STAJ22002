@@ -1,15 +1,18 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 import '../../domain/entities/cart_item_entity.dart';
-import '../../../products/domain/entities/product_entity.dart';
+import '../../domain/usecases/get_cart_items_usecase.dart';
+import '../../domain/usecases/save_cart_usecase.dart';
 import 'cart_event.dart';
 import 'cart_state.dart';
 
 class CartBloc extends Bloc<CartEvent, CartState> {
-  static const String _cartStorageKey = 'saved_cart_items';
+  final GetCartItemsUseCase getCartItemsUseCase;
+  final SaveCartUseCase saveCartUseCase;
 
-  CartBloc() : super(const CartState()) {
+  CartBloc({
+    required this.getCartItemsUseCase,
+    required this.saveCartUseCase,
+  }) : super(const CartState()) {
     on<LoadCartEvent>(_onLoadCart);
     on<AddToCartEvent>(_onAddToCart);
     on<RemoveFromCartEvent>(_onRemoveFromCart);
@@ -17,46 +20,21 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     on<DecrementQuantityEvent>(_onDecrementQuantity);
     on<ClearCartEvent>(_onClearCart);
 
-    // Bloc ilk açıldığında kaydedilmiş sepeti yükle
     add(LoadCartEvent());
   }
 
-  // 1. Kaydedilmiş Sepeti Yükleme (Caching'den Okuma)
   Future<void> _onLoadCart(LoadCartEvent event, Emitter<CartState> emit) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final String? cartJson = prefs.getString(_cartStorageKey);
+    emit(state.copyWith(isLoading: true));
 
-      if (cartJson != null) {
-        final List<dynamic> decodedList = jsonDecode(cartJson);
+    final result = await getCartItemsUseCase();
 
-        final List<CartItemEntity> loadedItems = decodedList.map((itemMap) {
-          final productMap = itemMap['product'];
-
-          final product = ProductEntity(
-            id: productMap['id'],
-            name: productMap['name'],
-            price: (productMap['price'] as num).toDouble(),
-            imageUrl: productMap['imageUrl'] ?? '',
-            description: productMap['description'] ?? '',
-            stock: productMap['stock'] ?? 0,
-          );
-
-          return CartItemEntity(
-            product: product,
-            quantity: itemMap['quantity'],
-          );
-        }).toList();
-
-        emit(CartState(items: loadedItems));
-      }
-    } catch (e) {
-      // Yükleme hatası yönetimi
-    }
+    result.fold(
+          (failure) => emit(state.copyWith(isLoading: false, errorMessage: failure.message)),
+          (items) => emit(state.copyWith(isLoading: false, items: items)),
+    );
   }
 
-  // 2. Sepete Ekleme
-  void _onAddToCart(AddToCartEvent event, Emitter<CartState> emit) {
+  Future<void> _onAddToCart(AddToCartEvent event, Emitter<CartState> emit) async {
     final currentItems = List<CartItemEntity>.from(state.items);
     final existingIndex = currentItems.indexWhere((item) => item.product.id == event.product.id);
 
@@ -69,19 +47,17 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       currentItems.add(CartItemEntity(product: event.product, quantity: 1));
     }
 
-    emit(CartState(items: currentItems));
-    _saveCartToPrefs();
+    emit(state.copyWith(items: currentItems));
+    await saveCartUseCase(currentItems);
   }
 
-  // 3. Sepetten Çıkarma
-  void _onRemoveFromCart(RemoveFromCartEvent event, Emitter<CartState> emit) {
+  Future<void> _onRemoveFromCart(RemoveFromCartEvent event, Emitter<CartState> emit) async {
     final currentItems = state.items.where((item) => item.product.id != event.productId).toList();
-    emit(CartState(items: currentItems));
-    _saveCartToPrefs();
+    emit(state.copyWith(items: currentItems));
+    await saveCartUseCase(currentItems);
   }
 
-  // 4. Miktar Artırma (+)
-  void _onIncrementQuantity(IncrementQuantityEvent event, Emitter<CartState> emit) {
+  Future<void> _onIncrementQuantity(IncrementQuantityEvent event, Emitter<CartState> emit) async {
     final currentItems = List<CartItemEntity>.from(state.items);
     final index = currentItems.indexWhere((item) => item.product.id == event.productId);
 
@@ -90,13 +66,12 @@ class CartBloc extends Bloc<CartEvent, CartState> {
         product: currentItems[index].product,
         quantity: currentItems[index].quantity + 1,
       );
-      emit(CartState(items: currentItems));
-      _saveCartToPrefs();
+      emit(state.copyWith(items: currentItems));
+      await saveCartUseCase(currentItems);
     }
   }
 
-  // 5. Miktar Azaltma (-)
-  void _onDecrementQuantity(DecrementQuantityEvent event, Emitter<CartState> emit) {
+  Future<void> _onDecrementQuantity(DecrementQuantityEvent event, Emitter<CartState> emit) async {
     final currentItems = List<CartItemEntity>.from(state.items);
     final index = currentItems.indexWhere((item) => item.product.id == event.productId);
 
@@ -109,37 +84,13 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       } else {
         currentItems.removeAt(index);
       }
-      emit(CartState(items: currentItems));
-      _saveCartToPrefs();
+      emit(state.copyWith(items: currentItems));
+      await saveCartUseCase(currentItems);
     }
   }
 
-  // 6. Sepeti Temizleme
-  void _onClearCart(ClearCartEvent event, Emitter<CartState> emit) {
-    emit(const CartState(items: []));
-    _saveCartToPrefs();
-  }
-
-  // Yardımcı: SharedPreferences'a Kaydetme (Caching'e Yazma)
-  Future<void> _saveCartToPrefs() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-
-      final List<Map<String, dynamic>> jsonList = state.items.map((item) => {
-        'product': {
-          'id': item.product.id,
-          'name': item.product.name,
-          'price': item.product.price,
-          'imageUrl': item.product.imageUrl,
-          'description': item.product.description,
-          'stock': item.product.stock,
-        },
-        'quantity': item.quantity,
-      }).toList();
-
-      await prefs.setString(_cartStorageKey, jsonEncode(jsonList));
-    } catch (e) {
-      // Kayıt hatası yönetimi
-    }
+  Future<void> _onClearCart(ClearCartEvent event, Emitter<CartState> emit) async {
+    emit(state.copyWith(items: []));
+    await saveCartUseCase([]);
   }
 }

@@ -14,13 +14,26 @@ class ProductLoading extends ProductState {}
 
 class ProductLoaded extends ProductState {
   final List<ProductEntity> products;
+  final bool hasReachedMax;
 
-  const ProductLoaded({required this.products});
+  const ProductLoaded({
+    required this.products,
+    this.hasReachedMax = false,
+  });
+
+  ProductLoaded copyWith({
+    List<ProductEntity>? products,
+    bool? hasReachedMax,
+  }) {
+    return ProductLoaded(
+      products: products ?? this.products,
+      hasReachedMax: hasReachedMax ?? this.hasReachedMax,
+    );
+  }
 
   @override
-  List<Object> get props => [products];
+  List<Object> get props => [products, hasReachedMax];
 }
-
 class ProductError extends ProductState {
   final String message;
 

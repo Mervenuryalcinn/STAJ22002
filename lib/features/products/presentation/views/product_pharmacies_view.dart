@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:lideatech_pharmacy_app/l10n/app_localizations.dart';
 
 class ProductPharmaciesView extends StatefulWidget {
   final String productId;
@@ -43,20 +44,22 @@ class _ProductPharmaciesViewState extends State<ProductPharmaciesView> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.productName} Bulunan Eczaneler'),
+        title: Text('${widget.productName} ${l10n.pharmaciesContainingProduct}'),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : pharmacies.isEmpty
-          ? const Center(
+          ? Center(
         child: Padding(
-          padding: EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(24.0),
           child: Text(
-            'Bu ilaç şu an hiçbir eczanenin stoklarında görünmüyor.',
+            l10n.noProductInPharmacies,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, color: Colors.grey),
+            style: const TextStyle(fontSize: 16, color: Colors.grey),
           ),
         ),
       )
@@ -73,7 +76,7 @@ class _ProductPharmaciesViewState extends State<ProductPharmaciesView> {
             child: ListTile(
               leading: const Icon(Icons.local_hospital, color: Colors.red, size: 36),
               title: Text(pharmacyName, style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text('Stok Miktarı: $stockAmount adet\nTelefon: $phoneNum'),
+              subtitle: Text('${l10n.stockAmount}: $stockAmount ${l10n.units}\n${l10n.phone}: $phoneNum'),
               trailing: IconButton(
                 icon: const Icon(Icons.map, color: Colors.blue, size: 30),
                 onPressed: () {

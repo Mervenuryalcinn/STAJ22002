@@ -1,5 +1,4 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import '../../domain/usecases/get_nearby_pharmacies_usecase.dart';
 import '../../domain/usecases/get_pharmacies_for_cart_usecase.dart';
 import '../../domain/repositories/pharmacy_repository.dart';
