@@ -89,7 +89,7 @@ class CartView extends StatelessWidget {
           );
         }
 
-        // --- GİRİŞ YAPILMIŞ PROFESYONEL SEPET EKRANI ---
+        // --- GİRİŞ YAPILMIŞ SEPET EKRANI ---
         return Scaffold(
           backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey.shade50,
           appBar: AppBar(
@@ -155,7 +155,7 @@ class CartView extends StatelessWidget {
                             padding: const EdgeInsets.all(12.0),
                             child: Row(
                               children: [
-                                // Şık Ürün İkon Kutusu
+                                // Ürün İkon Kutusu
                                 Container(
                                   width: 50,
                                   height: 50,
@@ -259,7 +259,7 @@ class CartView extends StatelessWidget {
                       },
                     ),
                   ),
-                  // Sabit Profesyonel Alt Toplam ve Düzenli Buton Barı
+                  //Alt Toplam ve Düzenli Buton Barı
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(

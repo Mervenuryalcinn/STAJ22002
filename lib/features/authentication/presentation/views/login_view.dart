@@ -78,7 +78,6 @@ class _LoginViewState extends State<LoginView> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Ortak Logo Bileşeni Entegrasyonu
                     const Center(
                       child: AppLogo(size: 84),
                     ),
